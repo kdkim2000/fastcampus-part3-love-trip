@@ -60,7 +60,6 @@ function LikePage() {
                 increaseViewportBy={0}
                 itemContent={(index, like) => {
                   return (
-                    // 최소 높이 잡아주기
                     <div style={{ minHeight: 1 }}>
                       <Draggable
                         key={like.id}

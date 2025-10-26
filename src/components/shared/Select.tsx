@@ -1,18 +1,22 @@
+// src/components/shared/Select.tsx
+
 import { forwardRef, SelectHTMLAttributes } from 'react'
+import styled from '@emotion/styled'
+import { colors } from '@styles/colorPalette'
 
 import Flex from './Flex'
 import Text from './Text'
-import styled from '@emotion/styled'
-import { colors } from '@styles/colorPalette'
 
 export interface Option {
   label: string
   value: string | number | undefined
 }
 
+// ✅ placeholder 속성 추가
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
   options: Option[]
+  placeholder?: string  // ✅ 추가
 }
 
 const BaseSelect = styled.select`

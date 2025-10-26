@@ -1,4 +1,4 @@
-import { CopyToClipboard } from 'react-copy-to-clipboard'
+// src/components/hotel/ActionButtons.tsx
 
 import { css } from '@emotion/react'
 import Flex from '@shared/Flex'
@@ -16,6 +16,30 @@ function ActionButtons({ hotel }: { hotel: Hotel }) {
   const { name, comment, mainImageUrl, id } = hotel
 
   const isLike = Boolean(likes?.find((like) => like.hotelId === hotel.id))
+
+  // ✅ 네이티브 Clipboard API 사용
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      alert('링크가 복사되었습니다.')
+    } catch (error) {
+      console.error('링크 복사 실패:', error)
+      // ✅ 폴백: 구형 브라우저 대응
+      const textarea = document.createElement('textarea')
+      textarea.value = window.location.href
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      try {
+        document.execCommand('copy')
+        alert('링크가 복사되었습니다.')
+      } catch (err) {
+        alert('링크 복사에 실패했습니다.')
+      }
+      document.body.removeChild(textarea)
+    }
+  }
 
   return (
     <Flex css={containerStyles}>
@@ -48,17 +72,12 @@ function ActionButtons({ hotel }: { hotel: Hotel }) {
         }}
         iconUrl="https://cdn1.iconfinder.com/data/icons/rounded-social-media/512/kakao-64.png"
       />
-      <CopyToClipboard
-        text={window.location.href}
-        onCopy={() => {
-          alert('링크가 복사되었습니다.')
-        }}
-      >
-        <Button
-          label="링크복사"
-          iconUrl="https://cdn4.iconfinder.com/data/icons/basic-user-interface-elements/700/paste-clipboard-copy-512.png"
-        />
-      </CopyToClipboard>
+      {/* ✅ CopyToClipboard 컴포넌트 제거하고 직접 onClick 사용 */}
+      <Button
+        label="링크복사"
+        onClick={handleCopyLink}
+        iconUrl="https://cdn4.iconfinder.com/data/icons/basic-user-interface-elements/700/paste-clipboard-copy-512.png"
+      />
     </Flex>
   )
 }
