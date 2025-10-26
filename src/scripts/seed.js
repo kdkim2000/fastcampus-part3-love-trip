@@ -8,15 +8,18 @@ const {
   writeBatch,
 } = require('firebase/firestore')
 
-// .env.local 파일의 환경 변수를 직접 입력
+// ✅ dotenv 사용하여 환경 변수 로드
+require('dotenv').config()
+
+// ✅ 환경 변수에서 Firebase 설정 읽기
 const firebaseConfig = {
-  apiKey: 'AIzaSyDw1waMUiOXvap5VistniAEDbZUDA1u0eY',
-  authDomain: 'love-trip-a9d59.firebaseapp.com',
-  projectId: 'love-trip-a9d59',
-  storageBucket: 'love-trip-a9d59.firebasestorage.app',
-  messagingSenderId: '884999797173',
-  appId: '1:884999797173:web:11d07e113130c9d2fd81fc',
-  measurementId: 'G-E12FDHZ3BM',
+  apiKey: process.env.REACT_APP_API_KEY,
+  authDomain: process.env.REACT_APP_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_MESSAGEING_SENDER_ID,
+  appId: process.env.REACT_APP_APP_ID,
+  measurementId: process.env.REACT_APP_MEASUREMENT_ID,
 }
 
 // Firebase 초기화
@@ -187,6 +190,15 @@ async function generateReservationData(userId, hotelIds) {
 async function seedDatabase() {
   console.log('🌱 데이터베이스 초기화를 시작합니다...\n')
 
+  // ✅ 환경 변수 검증
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    console.error('❌ Firebase 환경 변수가 설정되지 않았습니다!')
+    console.error('📝 .env.development 파일을 확인하세요.')
+    process.exit(1)
+  }
+
+  console.log(`🔥 Firebase 프로젝트: ${firebaseConfig.projectId}\n`)
+
   try {
     // 1. 먼저 모든 호텔 ID 생성
     const hotelIds = HOTEL_NAMES.map((_, index) => `hotel_${index + 1}`)
@@ -200,7 +212,6 @@ async function seedDatabase() {
 
       await setDoc(doc(db, 'hotel', hotelId), hotelData)
 
-      // 추천 호텔 개수 표시
       const recommendCount = hotelData.recommendHotels
         ? hotelData.recommendHotels.length
         : 0
@@ -237,10 +248,10 @@ async function seedDatabase() {
     })
     console.log('✅ 예약 폼 데이터 추가 완료')
 
-    // 5. 테스트 사용자 생성 (3명)
+    // 5. 테스트 사용자 생성
     const userIds = await createTestUsers(3)
 
-    // 6. 각 사용자별 Like 데이터 추가
+    // 6. Like 데이터 추가
     console.log('\n❤️  Like 데이터 추가 중...')
     let totalLikes = 0
 
@@ -252,7 +263,7 @@ async function seedDatabase() {
 
     console.log(`✅ 총 ${totalLikes}개의 Like 데이터 추가 완료`)
 
-    // 7. 각 사용자별 예약 데이터 추가
+    // 7. 예약 데이터 추가
     console.log('\n📅 예약 데이터 추가 중...')
     let totalReservations = 0
 
