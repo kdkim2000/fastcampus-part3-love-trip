@@ -1,0 +1,105 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 push될 때 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+# GitHub Pages에 배포할 권한 설정
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 방지
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> .env.production
+          echo "REACT_APP_AUTH_DOMAIN=${{ secrets.REACT_APP_AUTH_DOMAIN }}" >> .env.production
+          echo "REACT_APP_PROJECT_ID=${{ secrets.REACT_APP_PROJECT_ID }}" >> .env.production
+          echo "REACT_APP_STORAGE_BUCKET=${{ secrets.REACT_APP_STORAGE_BUCKET }}" >> .env.production
+          echo "REACT_APP_MESSAGEING_SENDER_ID=${{ secrets.REACT_APP_MESSAGEING_SENDER_ID }}" >> .env.production
+          echo "REACT_APP_APP_ID=${{ secrets.REACT_APP_APP_ID }}" >> .env.production
+          echo "REACT_APP_MEASUREMENT_ID=${{ secrets.REACT_APP_MEASUREMENT_ID }}" >> .env.production
+          echo "REACT_APP_KAKAO_API_KEY=${{ secrets.REACT_APP_KAKAO_API_KEY }}" >> .env.production
+
+      - name: Build project
+        run: yarn build
+        env:
+          CI: false  # 경고를 오류로 처리하지 않음
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+---
+
+### 4단계: GitHub Repository Secrets 설정
+
+1. GitHub Repository 페이지로 이동
+2. **Settings** → **Secrets and variables** → **Actions** 클릭
+3. **New repository secret** 버튼 클릭
+4. 다음 Secret들을 하나씩 추가:
+```
+Name: REACT_APP_API_KEY
+Value: AIzaSyDw1waMUiOXvap5VistniAEDbZUDA1u0eY
+
+Name: REACT_APP_AUTH_DOMAIN
+Value: love-trip-a9d59.firebaseapp.com
+
+Name: REACT_APP_PROJECT_ID
+Value: love-trip-a9d59
+
+Name: REACT_APP_STORAGE_BUCKET
+Value: love-trip-a9d59.firebasestorage.app
+
+Name: REACT_APP_MESSAGEING_SENDER_ID
+Value: 884999797173
+
+Name: REACT_APP_APP_ID
+Value: 1:884999797173:web:11d07e113130c9d2fd81fc
+
+Name: REACT_APP_MEASUREMENT_ID
+Value: G-E12FDHZ3BM
+
+Name: REACT_APP_KAKAO_API_KEY
+Value: 46ea3d8480b602ad35aca94c88e8f709
