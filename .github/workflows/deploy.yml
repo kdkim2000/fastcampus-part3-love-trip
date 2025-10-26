@@ -1,18 +1,18 @@
+# .github/workflows/deploy.yml
+
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
-      - main  # main 브랜치에 push될 때 실행
-  workflow_dispatch:  # 수동 실행 가능
+      - main
+  workflow_dispatch:
 
-# GitHub Pages에 배포할 권한 설정
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 동시 배포 방지
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -34,21 +34,26 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Create .env file
+      # ✅ GitHub Secrets에서 환경 변수 생성
+      - name: Create .env.production file
         run: |
-          echo "REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}" >> .env.production
-          echo "REACT_APP_AUTH_DOMAIN=${{ secrets.REACT_APP_AUTH_DOMAIN }}" >> .env.production
-          echo "REACT_APP_PROJECT_ID=${{ secrets.REACT_APP_PROJECT_ID }}" >> .env.production
-          echo "REACT_APP_STORAGE_BUCKET=${{ secrets.REACT_APP_STORAGE_BUCKET }}" >> .env.production
-          echo "REACT_APP_MESSAGEING_SENDER_ID=${{ secrets.REACT_APP_MESSAGEING_SENDER_ID }}" >> .env.production
-          echo "REACT_APP_APP_ID=${{ secrets.REACT_APP_APP_ID }}" >> .env.production
-          echo "REACT_APP_MEASUREMENT_ID=${{ secrets.REACT_APP_MEASUREMENT_ID }}" >> .env.production
-          echo "REACT_APP_KAKAO_API_KEY=${{ secrets.REACT_APP_KAKAO_API_KEY }}" >> .env.production
+          cat > .env.production << EOF
+          PUBLIC_URL=/fastcampus-part3-love-trip
+          REACT_APP_BASENAME=/fastcampus-part3-love-trip
+          REACT_APP_API_KEY=${{ secrets.REACT_APP_API_KEY }}
+          REACT_APP_AUTH_DOMAIN=${{ secrets.REACT_APP_AUTH_DOMAIN }}
+          REACT_APP_PROJECT_ID=${{ secrets.REACT_APP_PROJECT_ID }}
+          REACT_APP_STORAGE_BUCKET=${{ secrets.REACT_APP_STORAGE_BUCKET }}
+          REACT_APP_MESSAGEING_SENDER_ID=${{ secrets.REACT_APP_MESSAGEING_SENDER_ID }}
+          REACT_APP_APP_ID=${{ secrets.REACT_APP_APP_ID }}
+          REACT_APP_MEASUREMENT_ID=${{ secrets.REACT_APP_MEASUREMENT_ID }}
+          REACT_APP_KAKAO_API_KEY=${{ secrets.REACT_APP_KAKAO_API_KEY }}
+          EOF
 
       - name: Build project
         run: yarn build
         env:
-          CI: false  # 경고를 오류로 처리하지 않음
+          CI: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

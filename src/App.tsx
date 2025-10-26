@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
@@ -22,10 +24,13 @@ const ReservationListPage = lazy(() => import('@pages/ReservationList'))
 function App() {
   useLoadKakao()
 
+  // ✅ 환경 변수에서 basename 가져오기
+  const basename = process.env.REACT_APP_BASENAME || ''
+
   return (
     <Suspense fallback={<></>}>
       <HelmetProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <AuthGuard>
             <Navbar />
             <Routes>

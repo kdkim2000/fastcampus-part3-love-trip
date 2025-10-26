@@ -1,7 +1,12 @@
 // src/scripts/seed.js
 
 const { initializeApp } = require('firebase/app')
-const { getFirestore, doc, setDoc, writeBatch } = require('firebase/firestore')
+const {
+  getFirestore,
+  doc,
+  setDoc,
+  writeBatch,
+} = require('firebase/firestore')
 
 // .env.local 파일의 환경 변수를 직접 입력
 const firebaseConfig = {
@@ -39,7 +44,7 @@ function generateUserId() {
 }
 
 // 호텔 데이터 생성 함수
-function generateHotelData(name, index) {
+function generateHotelData(name, index, allHotelIds) {
   const mainImageIndex = index % IMAGES.length
   const imageIndexes = [
     mainImageIndex,
@@ -57,10 +62,19 @@ function generateHotelData(name, index) {
     ...HOTEL,
   }
 
-  // ✅ 50% 확률로 단일 이벤트 객체 추가 (배열 아님!)
+  // 50% 확률로 단일 이벤트 객체 추가
   if (Math.random() > 0.5) {
     const randomEvent = EVENTS[random(0, EVENTS.length - 1)]
-    hotelData.events = randomEvent // ✅ 단일 객체
+    hotelData.events = randomEvent
+  }
+
+  // 추천 호텔 추가 (랜덤하게 3~5개)
+  if (allHotelIds && allHotelIds.length > 1) {
+    const currentHotelId = `hotel_${index + 1}`
+    const otherHotels = allHotelIds.filter((id) => id !== currentHotelId)
+    const recommendCount = Math.min(random(3, 5), otherHotels.length)
+    const shuffled = [...otherHotels].sort(() => Math.random() - 0.5)
+    hotelData.recommendHotels = shuffled.slice(0, recommendCount)
   }
 
   return hotelData
@@ -143,7 +157,10 @@ async function generateReservationData(userId, hotelIds) {
     const checkOutDate = new Date()
     checkOutDate.setDate(checkOutDate.getDate() + checkOutDays)
 
-    const reservationId = `reservation_${Date.now()}_${i}_${random(1000, 9999)}`
+    const reservationId = `reservation_${Date.now()}_${i}_${random(
+      1000,
+      9999,
+    )}`
 
     await setDoc(doc(db, 'reservation', reservationId), {
       userId: userId,
@@ -171,22 +188,33 @@ async function seedDatabase() {
   console.log('🌱 데이터베이스 초기화를 시작합니다...\n')
 
   try {
-    // 1. 호텔 데이터 추가
+    // 1. 먼저 모든 호텔 ID 생성
+    const hotelIds = HOTEL_NAMES.map((_, index) => `hotel_${index + 1}`)
+    console.log(`📋 생성할 호텔 ID: ${hotelIds.length}개\n`)
+
+    // 2. 호텔 데이터 추가
     console.log('📍 호텔 데이터 추가 중...')
     const hotelPromises = HOTEL_NAMES.map(async (name, index) => {
-      const hotelId = `hotel_${index + 1}`
-      const hotelData = generateHotelData(name, index)
+      const hotelId = hotelIds[index]
+      const hotelData = generateHotelData(name, index, hotelIds)
 
       await setDoc(doc(db, 'hotel', hotelId), hotelData)
-      console.log(`  ✓ ${name} 추가 완료`)
+
+      // 추천 호텔 개수 표시
+      const recommendCount = hotelData.recommendHotels
+        ? hotelData.recommendHotels.length
+        : 0
+      console.log(
+        `  ✓ ${name} 추가 완료 (추천: ${recommendCount}개, 이벤트: ${hotelData.events ? '있음' : '없음'})`,
+      )
 
       return hotelId
     })
 
-    const hotelIds = await Promise.all(hotelPromises)
+    await Promise.all(hotelPromises)
     console.log(`\n✅ 총 ${hotelIds.length}개의 호텔 데이터 추가 완료`)
 
-    // 2. 객실 데이터 추가
+    // 3. 객실 데이터 추가
     console.log('\n🛏️  객실 데이터 추가 중...')
     let roomCount = 0
 
@@ -202,17 +230,17 @@ async function seedDatabase() {
 
     console.log(`✅ 총 ${roomCount}개의 객실 데이터 추가 완료`)
 
-    // 3. 예약 폼 데이터 추가
+    // 4. 예약 폼 데이터 추가
     console.log('\n📋 예약 폼 데이터 추가 중...')
     await setDoc(doc(db, 'hotel_form', 'default'), {
       forms: FORMS,
     })
     console.log('✅ 예약 폼 데이터 추가 완료')
 
-    // 4. 테스트 사용자 생성 (3명)
+    // 5. 테스트 사용자 생성 (3명)
     const userIds = await createTestUsers(3)
 
-    // 5. 각 사용자별 Like 데이터 추가
+    // 6. 각 사용자별 Like 데이터 추가
     console.log('\n❤️  Like 데이터 추가 중...')
     let totalLikes = 0
 
@@ -224,7 +252,7 @@ async function seedDatabase() {
 
     console.log(`✅ 총 ${totalLikes}개의 Like 데이터 추가 완료`)
 
-    // 6. 각 사용자별 예약 데이터 추가
+    // 7. 각 사용자별 예약 데이터 추가
     console.log('\n📅 예약 데이터 추가 중...')
     let totalReservations = 0
 
@@ -251,6 +279,9 @@ async function seedDatabase() {
     })
     console.log(
       '\n💡 실제 Google 로그인 후 해당 사용자의 UID로 Like/예약 데이터를 확인할 수 있습니다.',
+    )
+    console.log(
+      '\n🏨 각 호텔에는 3~5개의 추천 호텔이 랜덤으로 설정되어 있습니다.',
     )
   } catch (error) {
     console.error('❌ 데이터베이스 초기화 중 오류 발생:', error)

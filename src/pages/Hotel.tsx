@@ -1,3 +1,5 @@
+// src/pages/Hotel.tsx
+
 import { useParams } from 'react-router-dom'
 import { css } from '@emotion/react'
 
@@ -34,7 +36,10 @@ function HotelPage() {
       <Rooms hotelId={id} />
       <Contents contents={contents} />
       <Map location={location} />
-      <RecommendHotels recommendHotels={recommendHotels} />
+      {/* ✅ recommendHotels가 있을 때만 렌더링 */}
+      {recommendHotels && recommendHotels.length > 0 && (
+        <RecommendHotels recommendHotels={recommendHotels} />
+      )}
       <Review hotelId={id} />
     </div>
   )
