@@ -55,7 +55,8 @@ function HotelItem({
   }, [hotel.events])
 
   const tagComponent = () => {
-    if (hotel.events == null) {
+    // ✅ events가 없거나 tagThemeStyle이 없으면 null 반환
+    if (hotel.events == null || hotel.events.tagThemeStyle == null) {
       return null
     }
 

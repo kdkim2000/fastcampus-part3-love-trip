@@ -1,3 +1,5 @@
+// src/models/hotel.ts - 원래대로 되돌리기
+
 export interface Hotel {
   comment: string
   contents: string
@@ -9,6 +11,7 @@ export interface Hotel {
   price: number
   starRating: number
   events?: {
+    // ✅ 단일 객체로 원복
     name: string
     promoEndTime?: string
     tagThemeStyle: {
