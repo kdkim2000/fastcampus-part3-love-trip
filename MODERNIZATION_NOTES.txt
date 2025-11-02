@@ -1,0 +1,17 @@
+Modernization summary:
+- Project converted to Vite + React 18 structure.
+- React Router v6 lazy routes set up in src/App.tsx.
+- React Query provider added in src/index.tsx.
+- Firebase config updated to modular SDK (if remote/firebase.ts existed).
+- package.json replaced to reflect modern dev & runtime deps (vite, react 18, react-query, etc).
+- tsconfig.json and vite.config.ts added.
+- Original files backed up with .bak or .orig suffix where modified.
+
+To run:
+1) cd fastcampus-part3-love-trip-modernized
+2) npm install
+3) npm run dev
+
+Notes:
+- Ensure .env files are migrated: Vite prefers import.meta.env.VITE_*, adjust as needed.
+- Some legacy imports or CRA-specific code may require small edits (e.g., serviceWorker, process.env handling). Manual review recommended.
