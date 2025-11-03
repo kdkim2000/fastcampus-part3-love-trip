@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn install)",
+      "Bash(yarn build)",
+      "Bash(DISABLE_ESLINT_PLUGIN=true yarn build:*)",
+      "Bash(yarn tsc:*)",
+      "Bash(yarn dlx:*)",
+      "Bash(yarn start)",
+      "Bash(taskkill //F //IM node.exe 2)",
+      "Bash(nul)",
+      "Bash(pkill:*)",
+      "Bash(yarn lint:*)",
+      "Bash(yarn list:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn lint:fix:*)",
+      "Bash(yarn remove:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

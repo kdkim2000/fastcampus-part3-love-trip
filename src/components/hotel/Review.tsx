@@ -38,7 +38,7 @@ function Review({ hotelId }: { hotelId: string }) {
           <ListRow
             key={review.id}
             left={
-              review.user.photoURL != null ? (
+              review.user?.photoURL != null ? (
                 <img src={review.user.photoURL} alt="" width={40} height={40} />
               ) : null
             }

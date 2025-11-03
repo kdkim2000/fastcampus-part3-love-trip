@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from 'react-query'
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { onSnapshot, collection, doc } from 'firebase/firestore'
 
@@ -28,8 +28,9 @@ function useRooms({ hotelId }: { hotelId: string }) {
     }
   }, [hotelId, client])
 
-  return useQuery(['rooms', hotelId], () => getRooms(hotelId), {
-    suspense: true,
+  return useSuspenseQuery({
+    queryKey: ['rooms', hotelId],
+    queryFn: () => getRooms(hotelId),
   })
 }
 

@@ -12,7 +12,7 @@ function RecommendHotelButton() {
     snapshot.docs.forEach((hotel) => {
       const 추천호텔리스트 = []
 
-      for (let doc of snapshot.docs) {
+      for (const doc of snapshot.docs) {
         if (추천호텔리스트.length === 5) {
           break
         }
