@@ -11,27 +11,9 @@ import { Virtuoso } from 'react-virtuoso'
 import ListRow from '@shared/ListRow'
 import FixedBottomButton from '@shared/FixedBottomButton'
 import useEditLike from '@components/settings/like/hooks/useEditLike'
-import { Like } from '@models/like'
-
-function generateMocks() {
-  const mocks = []
-
-  for (let i = 0; i < 1000; i += 1) {
-    mocks.push({
-      id: `${i}`,
-      hotelId: `hotel ${i}`,
-      hotelName: `hotel ${i}`,
-      hotelMainImageUrl: `hotel ${i}`,
-      userId: '',
-      order: i,
-    } as Like)
-  }
-
-  return mocks
-}
 
 function LikePage() {
-  const { isEdit, reorder, save } = useEditLike()
+  const { data, isEdit, reorder, save } = useEditLike()
 
   const handleDragEndDrop = (result: DropResult) => {
     if (result.destination == null) {
@@ -43,8 +25,6 @@ function LikePage() {
 
     reorder(from, to)
   }
-
-  const mocks = generateMocks()
 
   return (
     <div>
@@ -88,7 +68,7 @@ function LikePage() {
                     </div>
                   )
                 }}
-                data={mocks}
+                data={data ?? []}
               />
             </ul>
           )}
