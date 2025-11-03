@@ -26,9 +26,9 @@ function useGoogleSignin() {
       } else {
         const 새로운유저 = {
           uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
+          email: user.email ?? '',
+          displayName: user.displayName ?? '',
+          photoURL: user.photoURL ?? '',
         }
 
         await setDoc(
@@ -40,12 +40,25 @@ function useGoogleSignin() {
       }
     } catch (error) {
       if (error instanceof FirebaseError) {
+        console.error('Firebase error code:', error.code)
+        console.error('Firebase error message:', error.message)
+
         if (error.code === 'auth/popup-closed-by-user') {
+          return
+        }
+
+        if (error.code === 'auth/popup-blocked') {
+          alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.')
+          return
+        }
+
+        if (error.code === 'auth/cancelled-popup-request') {
           return
         }
       }
 
-      throw new Error('fail to signin')
+      console.error('Signin error:', error)
+      alert('로그인에 실패했습니다. 다시 시도해주세요.')
     }
   }, [navigate])
 
