@@ -2,6 +2,7 @@
   "name": "part3_love_trip",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://kdkim2000.github.io/fastcampus-part3-love-trip",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
