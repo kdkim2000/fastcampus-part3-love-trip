@@ -1,8 +1,8 @@
-import { useRecoilValue } from 'recoil'
-import { userAtom } from '@store/atom/user'
+import { useUserContext } from '@contexts/UserContext'
 
 function useUser() {
-  return useRecoilValue(userAtom)
+  const { user } = useUserContext()
+  return user
 }
 
 export default useUser

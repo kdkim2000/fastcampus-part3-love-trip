@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from 'react'
-import { useQueryClient } from 'react-query'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Like } from '@models/like'
 import useLike from '@hooks/like/useLike'
@@ -41,9 +41,9 @@ function useEditLike() {
   const save = async () => {
     try {
       await updateOrder(updatedLikes)
-      client.setQueriesData(['likes'], updatedLikes)
+      client.setQueryData(['likes'], updatedLikes)
       setIsEdit(false)
-    } catch (e) {
+    } catch {
       open({
         title: '알 수 없는 에러가 발생했습니다. 잠시 후 다시 시도해주세요',
         onButtonClick: () => {

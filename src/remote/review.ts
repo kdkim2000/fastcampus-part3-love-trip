@@ -36,18 +36,21 @@ export async function getReviews({ hotelId }: { hotelId: string }) {
   const userMap: {
     [key: string]: User
   } = {}
-  const results: Array<Review & { user: User }> = []
+  const results: Array<Review & { user?: User }> = []
 
-  for (let review of reviews) {
+  for (const review of reviews) {
     const 캐시된유저 = userMap[review.userId]
 
     if (캐시된유저 == null) {
       const userSnapshot = await getDoc(
         doc(collection(store, COLLECTIONS.USER), review.userId),
       )
-      const user = userSnapshot.data() as User
+      const user = userSnapshot.data() as User | undefined
 
-      userMap[review.userId] = user
+      if (user != null) {
+        userMap[review.userId] = user
+      }
+
       results.push({
         ...review,
         user,

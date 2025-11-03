@@ -8,6 +8,7 @@ import { Fragment } from 'react'
 import Spacing from '@shared/Spacing'
 import useLike from '@hooks/like/useLike'
 import withSusepnse from '@shared/hocs/withSuspense'
+import { Hotel } from '@models/hotel'
 
 function HotelList() {
   const { data: hotels, hasNextPage, loadMore } = useHotels()
@@ -25,7 +26,7 @@ function HotelList() {
         scrollThreshold="100px"
       >
         <ul>
-          {hotels?.map((hotel, idx) => (
+          {hotels?.map((hotel: Hotel, idx: number) => (
             <Fragment key={hotel.id}>
               <HotelItem
                 hotel={hotel}
