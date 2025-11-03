@@ -98,6 +98,759 @@ function Button({
 
 ---
 
+## Chapter 2: 컴포넌트와 Props
+
+### 2.1 컴포넌트란?
+
+컴포넌트는 React 애플리케이션을 구성하는 독립적이고 재사용 가능한 UI 조각입니다. 레고 블록처럼 여러 컴포넌트를 조합하여 복잡한 UI를 만들 수 있습니다.
+
+**컴포넌트의 종류:**
+1. **함수형 컴포넌트**: 현대 React의 표준 (Hooks 사용)
+2. **클래스형 컴포넌트**: 레거시 방식 (거의 사용하지 않음)
+
+### 2.2 Props (Properties)
+
+Props는 부모 컴포넌트에서 자식 컴포넌트로 데이터를 전달하는 방법입니다. **단방향 데이터 흐름**을 따르며, 자식 컴포넌트는 Props를 읽기만 할 수 있고 수정할 수 없습니다.
+
+**기본 예제:**
+
+```typescript
+// 자식 컴포넌트 정의
+interface GreetingProps {
+  name: string
+  age?: number  // ? = 선택적 prop
+}
+
+function Greeting({ name, age }: GreetingProps) {
+  return (
+    <div>
+      <h1>안녕하세요, {name}님!</h1>
+      {age && <p>나이: {age}세</p>}
+    </div>
+  )
+}
+
+// 부모 컴포넌트에서 사용
+function App() {
+  return (
+    <div>
+      <Greeting name="김철수" age={25} />
+      <Greeting name="이영희" />
+    </div>
+  )
+}
+```
+
+### 2.3 실전 예제: HotelItem 컴포넌트
+
+**예제: `src/components/hotelList/HotelItem.tsx`**
+
+```typescript
+import styled from '@emotion/styled'
+import { Hotel } from '@models/hotel'
+import addDelimiter from '@utils/addDelimiter'
+
+interface HotelItemProps {
+  hotel: Hotel
+  onClick?: () => void
+  isLiked?: boolean
+  onLikeClick?: (hotelId: string) => void
+}
+
+function HotelItem({
+  hotel,
+  onClick,
+  isLiked = false,
+  onLikeClick
+}: HotelItemProps) {
+  return (
+    <Container onClick={onClick}>
+      <Image src={hotel.mainImageUrl} alt={hotel.name} />
+      <Contents>
+        <Title>{hotel.name}</Title>
+        <Location>{hotel.location}</Location>
+        <PriceWrap>
+          <Price>{addDelimiter(hotel.price)}원</Price>
+          <Rating>⭐ {hotel.rating}</Rating>
+        </PriceWrap>
+      </Contents>
+
+      {onLikeClick && (
+        <LikeButton
+          onClick={(e) => {
+            e.stopPropagation()  // 이벤트 버블링 방지
+            onLikeClick(hotel.id)
+          }}
+        >
+          {isLiked ? '❤️' : '🤍'}
+        </LikeButton>
+      )}
+    </Container>
+  )
+}
+
+const Container = styled.div`
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`
+
+const Image = styled.img`
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  object-fit: cover;
+`
+
+const Contents = styled.div`
+  flex: 1;
+`
+
+const Title = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+`
+
+const Location = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+`
+
+const PriceWrap = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`
+
+const Price = styled.span`
+  font-size: 16px;
+  font-weight: 700;
+  color: #3b82f6;
+`
+
+const Rating = styled.span`
+  font-size: 14px;
+`
+
+const LikeButton = styled.button`
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+`
+
+export default HotelItem
+```
+
+### 2.4 Props의 핵심 패턴
+
+#### 1. **Default Props (기본값 설정)**
+
+```typescript
+interface ButtonProps {
+  text: string
+  color?: string
+  size?: 'small' | 'medium' | 'large'
+}
+
+function Button({
+  text,
+  color = 'blue',  // 기본값
+  size = 'medium'
+}: ButtonProps) {
+  return <button>{text}</button>
+}
+```
+
+#### 2. **Children Prop**
+
+```typescript
+interface CardProps {
+  children: React.ReactNode
+  title?: string
+}
+
+function Card({ children, title }: CardProps) {
+  return (
+    <div>
+      {title && <h2>{title}</h2>}
+      {children}
+    </div>
+  )
+}
+
+// 사용
+<Card title="호텔 정보">
+  <p>설명...</p>
+  <Button text="예약하기" />
+</Card>
+```
+
+#### 3. **Spread Props (나머지 props 전달)**
+
+```typescript
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string
+  error?: string
+}
+
+function Input({ label, error, ...rest }: InputProps) {
+  return (
+    <div>
+      <label>{label}</label>
+      <input {...rest} />  {/* 나머지 모든 props 전달 */}
+      {error && <span>{error}</span>}
+    </div>
+  )
+}
+
+// 사용
+<Input
+  label="이메일"
+  type="email"
+  placeholder="example@email.com"
+  required
+/>
+```
+
+#### 4. **Function Props (이벤트 핸들러)**
+
+```typescript
+interface SearchBarProps {
+  onSearch: (keyword: string) => void
+  onClear?: () => void
+}
+
+function SearchBar({ onSearch, onClear }: SearchBarProps) {
+  const [keyword, setKeyword] = useState('')
+
+  return (
+    <div>
+      <input
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+      />
+      <button onClick={() => onSearch(keyword)}>검색</button>
+      {onClear && <button onClick={onClear}>초기화</button>}
+    </div>
+  )
+}
+```
+
+### 2.5 Props Drilling 문제와 해결책
+
+**Props Drilling**: 여러 계층의 컴포넌트를 거쳐 props를 전달해야 하는 문제
+
+```typescript
+// ❌ Props Drilling
+function App() {
+  const [user, setUser] = useState(null)
+
+  return <Layout user={user} />
+}
+
+function Layout({ user }) {
+  return <Header user={user} />
+}
+
+function Header({ user }) {
+  return <UserMenu user={user} />
+}
+
+function UserMenu({ user }) {
+  return <div>{user.name}</div>
+}
+```
+
+**해결책: Context API (Chapter 8에서 자세히 다룸)**
+
+```typescript
+// ✅ Context 사용
+const UserContext = createContext(null)
+
+function App() {
+  const [user, setUser] = useState(null)
+
+  return (
+    <UserContext.Provider value={user}>
+      <Layout />
+    </UserContext.Provider>
+  )
+}
+
+function UserMenu() {
+  const user = useContext(UserContext)
+  return <div>{user.name}</div>
+}
+```
+
+### 2.6 TypeScript와 Props
+
+**제네릭을 활용한 재사용 가능한 컴포넌트:**
+
+```typescript
+interface ListProps<T> {
+  items: T[]
+  renderItem: (item: T) => React.ReactNode
+  keyExtractor: (item: T) => string
+}
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <div>
+      {items.map(item => (
+        <div key={keyExtractor(item)}>
+          {renderItem(item)}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// 사용
+<List
+  items={hotels}
+  renderItem={(hotel) => <HotelItem hotel={hotel} />}
+  keyExtractor={(hotel) => hotel.id}
+/>
+```
+
+---
+
+## Chapter 3: State와 이벤트 처리
+
+### 3.1 State란?
+
+State는 컴포넌트가 가지는 **동적인 데이터**입니다. State가 변경되면 React는 자동으로 컴포넌트를 다시 렌더링합니다.
+
+**Props vs State:**
+- **Props**: 부모로부터 받는 읽기 전용 데이터
+- **State**: 컴포넌트 내부에서 관리하는 변경 가능한 데이터
+
+### 3.2 useState 기본
+
+```typescript
+import { useState } from 'react'
+
+function Counter() {
+  // [현재 값, 값을 변경하는 함수] = useState(초기값)
+  const [count, setCount] = useState(0)
+
+  return (
+    <div>
+      <p>현재 카운트: {count}</p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+      <button onClick={() => setCount(count - 1)}>-1</button>
+      <button onClick={() => setCount(0)}>초기화</button>
+    </div>
+  )
+}
+```
+
+### 3.3 여러 개의 State 관리
+
+```typescript
+function SignupForm() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!agreeToTerms) {
+      alert('약관에 동의해주세요')
+      return
+    }
+
+    console.log({ email, password, name })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="이메일"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="비밀번호"
+      />
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="이름"
+      />
+      <label>
+        <input
+          type="checkbox"
+          checked={agreeToTerms}
+          onChange={(e) => setAgreeToTerms(e.target.checked)}
+        />
+        약관에 동의합니다
+      </label>
+      <button type="submit">회원가입</button>
+    </form>
+  )
+}
+```
+
+### 3.4 객체 State 관리
+
+```typescript
+interface UserForm {
+  email: string
+  password: string
+  name: string
+}
+
+function SignupFormV2() {
+  const [form, setForm] = useState<UserForm>({
+    email: '',
+    password: '',
+    name: '',
+  })
+
+  // 여러 필드를 한 번에 관리
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+
+    setForm(prev => ({
+      ...prev,      // 기존 값 복사
+      [name]: value // 특정 필드만 업데이트
+    }))
+  }
+
+  return (
+    <form>
+      <input
+        name="email"
+        value={form.email}
+        onChange={handleChange}
+      />
+      <input
+        name="password"
+        value={form.password}
+        onChange={handleChange}
+      />
+      <input
+        name="name"
+        value={form.name}
+        onChange={handleChange}
+      />
+    </form>
+  )
+}
+```
+
+### 3.5 배열 State 관리
+
+```typescript
+function TodoList() {
+  const [todos, setTodos] = useState<string[]>([])
+  const [input, setInput] = useState('')
+
+  // 추가
+  const addTodo = () => {
+    if (input.trim() === '') return
+    setTodos(prev => [...prev, input])
+    setInput('')
+  }
+
+  // 삭제
+  const removeTodo = (index: number) => {
+    setTodos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // 수정
+  const updateTodo = (index: number, newText: string) => {
+    setTodos(prev => prev.map((todo, i) =>
+      i === index ? newText : todo
+    ))
+  }
+
+  return (
+    <div>
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+      />
+      <button onClick={addTodo}>추가</button>
+
+      <ul>
+        {todos.map((todo, index) => (
+          <li key={index}>
+            {todo}
+            <button onClick={() => removeTodo(index)}>삭제</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+```
+
+### 3.6 이벤트 처리
+
+#### 1. **클릭 이벤트**
+
+```typescript
+function ClickExample() {
+  const handleClick = () => {
+    console.log('버튼 클릭!')
+  }
+
+  const handleClickWithParam = (message: string) => {
+    console.log(message)
+  }
+
+  return (
+    <div>
+      {/* 방법 1: 직접 함수 전달 */}
+      <button onClick={handleClick}>클릭</button>
+
+      {/* 방법 2: 익명 함수 */}
+      <button onClick={() => console.log('익명 함수')}>클릭</button>
+
+      {/* 방법 3: 파라미터 전달 */}
+      <button onClick={() => handleClickWithParam('안녕!')}>클릭</button>
+
+      {/* ❌ 잘못된 방법 - 함수가 즉시 실행됨 */}
+      <button onClick={handleClick()}>클릭</button>
+    </div>
+  )
+}
+```
+
+#### 2. **Form 이벤트**
+
+```typescript
+function FormExample() {
+  const [value, setValue] = useState('')
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()  // 페이지 새로고침 방지
+    console.log('제출:', value)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value)
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={value}
+        onChange={handleChange}
+      />
+      <button type="submit">제출</button>
+    </form>
+  )
+}
+```
+
+#### 3. **이벤트 버블링 제어**
+
+```typescript
+function EventBubbling() {
+  const handleParentClick = () => {
+    console.log('부모 클릭')
+  }
+
+  const handleChildClick = (e: React.MouseEvent) => {
+    e.stopPropagation()  // 이벤트 버블링 중단
+    console.log('자식 클릭')
+  }
+
+  return (
+    <div onClick={handleParentClick}>
+      부모
+      <button onClick={handleChildClick}>자식</button>
+    </div>
+  )
+}
+```
+
+### 3.7 실전 예제: 검색 필터링
+
+```typescript
+function HotelSearch() {
+  const [hotels, setHotels] = useState<Hotel[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [minPrice, setMinPrice] = useState(0)
+  const [maxPrice, setMaxPrice] = useState(500000)
+
+  // 필터링된 호텔 목록
+  const filteredHotels = hotels.filter(hotel => {
+    const matchesSearch = hotel.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+
+    const matchesPrice =
+      hotel.price >= minPrice &&
+      hotel.price <= maxPrice
+
+    return matchesSearch && matchesPrice
+  })
+
+  return (
+    <div>
+      {/* 검색 입력 */}
+      <input
+        type="text"
+        placeholder="호텔 이름 검색"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
+      {/* 가격 필터 */}
+      <div>
+        <label>
+          최소 가격:
+          <input
+            type="number"
+            value={minPrice}
+            onChange={(e) => setMinPrice(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          최대 가격:
+          <input
+            type="number"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+          />
+        </label>
+      </div>
+
+      {/* 결과 표시 */}
+      <div>
+        총 {filteredHotels.length}개의 호텔
+      </div>
+
+      {/* 호텔 목록 */}
+      {filteredHotels.map(hotel => (
+        <HotelItem key={hotel.id} hotel={hotel} />
+      ))}
+    </div>
+  )
+}
+```
+
+### 3.8 조건부 렌더링
+
+```typescript
+function ConditionalRendering() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+
+  // 방법 1: if-else
+  if (!isLoggedIn) {
+    return <LoginPage />
+  }
+
+  return (
+    <div>
+      {/* 방법 2: 삼항 연산자 */}
+      {isLoggedIn ? <WelcomePage /> : <LoginPage />}
+
+      {/* 방법 3: && 연산자 (조건이 true일 때만 렌더링) */}
+      {user && <UserProfile user={user} />}
+
+      {/* 방법 4: 함수로 분리 */}
+      {renderContent()}
+    </div>
+  )
+
+  function renderContent() {
+    if (user?.role === 'admin') {
+      return <AdminDashboard />
+    }
+    if (user?.role === 'user') {
+      return <UserDashboard />
+    }
+    return <GuestDashboard />
+  }
+}
+```
+
+### 3.9 리스트 렌더링과 Key
+
+```typescript
+function HotelList() {
+  const [hotels, setHotels] = useState<Hotel[]>([])
+
+  return (
+    <div>
+      {/* ✅ 올바른 방법: 고유한 ID 사용 */}
+      {hotels.map(hotel => (
+        <HotelItem key={hotel.id} hotel={hotel} />
+      ))}
+
+      {/* ❌ 잘못된 방법: index를 key로 사용 (순서가 바뀔 수 있는 경우) */}
+      {hotels.map((hotel, index) => (
+        <HotelItem key={index} hotel={hotel} />
+      ))}
+    </div>
+  )
+}
+```
+
+**Key가 중요한 이유:**
+- React가 어떤 항목이 변경/추가/삭제되었는지 식별
+- 리스트 항목의 순서가 바뀔 때 불필요한 리렌더링 방지
+- 컴포넌트 state가 올바르게 유지됨
+
+### 3.10 State 업데이트 주의사항
+
+```typescript
+function StateUpdates() {
+  const [count, setCount] = useState(0)
+
+  // ❌ 잘못된 방법: 이전 state에 의존
+  const incrementThreeTimes_Wrong = () => {
+    setCount(count + 1)  // 0 + 1 = 1
+    setCount(count + 1)  // 0 + 1 = 1
+    setCount(count + 1)  // 0 + 1 = 1
+    // 결과: 1 (예상과 다름!)
+  }
+
+  // ✅ 올바른 방법: 함수형 업데이트
+  const incrementThreeTimes_Correct = () => {
+    setCount(prev => prev + 1)  // 0 + 1 = 1
+    setCount(prev => prev + 1)  // 1 + 1 = 2
+    setCount(prev => prev + 1)  // 2 + 1 = 3
+    // 결과: 3
+  }
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={incrementThreeTimes_Correct}>+3</button>
+    </div>
+  )
+}
+```
+
+---
+
 # Part 2: React Hooks 완전정복
 
 ## Chapter 4: useState - 상태 관리의 기본
@@ -110,7 +863,89 @@ function Button({
 const [state, setState] = useState<Type>(initialValue)
 ```
 
-### 실전 예제: 인증 상태 관리
+### 4.1 useState 심화
+
+#### 1. **초기 상태가 복잡한 계산인 경우**
+
+```typescript
+function ExpensiveComponent() {
+  // ❌ 매 렌더링마다 실행됨
+  const [data, setData] = useState(expensiveCalculation())
+
+  // ✅ 초기 렌더링 시에만 실행
+  const [data, setData] = useState(() => expensiveCalculation())
+
+  return <div>{data}</div>
+}
+```
+
+#### 2. **이전 상태 기반 업데이트**
+
+```typescript
+function Counter() {
+  const [count, setCount] = useState(0)
+
+  const increment = () => {
+    // ✅ 함수형 업데이트: 항상 최신 상태 보장
+    setCount(prev => prev + 1)
+  }
+
+  return <button onClick={increment}>Count: {count}</button>
+}
+```
+
+#### 3. **복잡한 상태 관리 패턴**
+
+```typescript
+interface FormState {
+  name: string
+  email: string
+  age: number
+  interests: string[]
+}
+
+function ProfileForm() {
+  const [form, setForm] = useState<FormState>({
+    name: '',
+    email: '',
+    age: 0,
+    interests: [],
+  })
+
+  // 개별 필드 업데이트
+  const updateField = <K extends keyof FormState>(
+    field: K,
+    value: FormState[K]
+  ) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  // 관심사 토글
+  const toggleInterest = (interest: string) => {
+    setForm(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest],
+    }))
+  }
+
+  return (
+    <form>
+      <input
+        value={form.name}
+        onChange={e => updateField('name', e.target.value)}
+      />
+      <input
+        value={form.email}
+        onChange={e => updateField('email', e.target.value)}
+      />
+    </form>
+  )
+}
+```
+
+### 4.2 실전 예제: 인증 상태 관리
 
 **`src/components/auth/AuthGuard.tsx`**
 
@@ -148,9 +983,1303 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 ```
 
+### 4.3 useState vs useReducer
+
+복잡한 상태 로직의 경우 `useReducer`를 고려하세요:
+
+```typescript
+// useState - 간단한 상태
+const [count, setCount] = useState(0)
+
+// useReducer - 복잡한 상태 로직
+type Action =
+  | { type: 'increment' }
+  | { type: 'decrement' }
+  | { type: 'reset'; payload: number }
+
+const reducer = (state: number, action: Action) => {
+  switch (action.type) {
+    case 'increment': return state + 1
+    case 'decrement': return state - 1
+    case 'reset': return action.payload
+    default: return state
+  }
+}
+
+const [count, dispatch] = useReducer(reducer, 0)
+```
+
+---
+
+## Chapter 5: useEffect - 생명주기와 부수효과
+
+### 5.1 useEffect란?
+
+`useEffect`는 컴포넌트가 렌더링된 후 **부수 효과(side effect)**를 수행하는 Hook입니다.
+
+**부수 효과 예시:**
+- 데이터 페칭
+- 구독(subscription) 설정
+- DOM 직접 조작
+- 타이머 설정
+- 로깅
+
+**기본 문법:**
+
+```typescript
+useEffect(() => {
+  // 실행할 코드 (effect)
+
+  return () => {
+    // cleanup 함수 (선택사항)
+  }
+}, [dependencies]) // 의존성 배열
+```
+
+### 5.2 의존성 배열의 3가지 패턴
+
+```typescript
+// 1. 의존성 배열 없음 - 매 렌더링마다 실행
+useEffect(() => {
+  console.log('매 렌더링마다 실행')
+})
+
+// 2. 빈 배열 - 마운트 시 1번만 실행
+useEffect(() => {
+  console.log('컴포넌트 마운트 시 1번만 실행')
+}, [])
+
+// 3. 특정 값 - 해당 값이 변경될 때만 실행
+useEffect(() => {
+  console.log('count가 변경될 때마다 실행')
+}, [count])
+```
+
+### 5.3 실전 예제: 데이터 페칭
+
+```typescript
+function HotelDetail({ hotelId }: { hotelId: string }) {
+  const [hotel, setHotel] = useState<Hotel | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchHotel = async () => {
+      try {
+        setLoading(true)
+        const data = await getHotel(hotelId)
+
+        if (!cancelled) {
+          setHotel(data)
+          setError(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err as Error)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchHotel()
+
+    // Cleanup: 컴포넌트가 언마운트되거나 hotelId가 변경될 때
+    return () => {
+      cancelled = true
+    }
+  }, [hotelId])
+
+  if (loading) return <div>로딩 중...</div>
+  if (error) return <div>에러: {error.message}</div>
+  if (!hotel) return <div>호텔을 찾을 수 없습니다</div>
+
+  return <div>{hotel.name}</div>
+}
+```
+
+### 5.4 Cleanup 함수
+
+```typescript
+function Timer() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    console.log('타이머 시작')
+
+    const timer = setInterval(() => {
+      setCount(prev => prev + 1)
+    }, 1000)
+
+    // Cleanup: 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      console.log('타이머 정리')
+      clearInterval(timer)
+    }
+  }, [])
+
+  return <div>카운트: {count}</div>
+}
+```
+
+### 5.5 이벤트 리스너 등록/해제
+
+```typescript
+function WindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    // Cleanup: 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  return (
+    <div>
+      {size.width} x {size.height}
+    </div>
+  )
+}
+```
+
+### 5.6 여러 개의 useEffect 사용
+
+```typescript
+function UserProfile({ userId }: { userId: string }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
+
+  // Effect 1: 사용자 정보 로드
+  useEffect(() => {
+    fetchUser(userId).then(setUser)
+  }, [userId])
+
+  // Effect 2: 사용자 게시글 로드
+  useEffect(() => {
+    if (user) {
+      fetchUserPosts(user.id).then(setPosts)
+    }
+  }, [user])
+
+  // Effect 3: 페이지 타이틀 업데이트
+  useEffect(() => {
+    if (user) {
+      document.title = `${user.name}의 프로필`
+    }
+
+    return () => {
+      document.title = '앱 이름'
+    }
+  }, [user])
+
+  return <div>...</div>
+}
+```
+
+### 5.7 useEffect 안티패턴
+
+```typescript
+// ❌ 안티패턴 1: 의존성 배열 누락
+function BadExample1() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCount(count + 1)  // count가 의존성에 없음!
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])  // 빈 배열 - count 변경 감지 못함
+}
+
+// ✅ 올바른 방법
+function GoodExample1() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCount(prev => prev + 1)  // 함수형 업데이트
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+}
+
+// ❌ 안티패턴 2: useEffect 내에서 상태 직접 변경
+function BadExample2() {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    fetchData().then(result => {
+      setData(result)
+      setData(result.filter(item => item.active))  // 연속 setState
+    })
+  }, [])
+}
+
+// ✅ 올바른 방법
+function GoodExample2() {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    fetchData().then(result => {
+      const activeData = result.filter(item => item.active)
+      setData(activeData)
+    })
+  }, [])
+}
+```
+
+### 5.8 실전 예제: Firebase 실시간 구독
+
+```typescript
+function RealtimeHotels() {
+  const [hotels, setHotels] = useState<Hotel[]>([])
+
+  useEffect(() => {
+    const q = query(collection(store, 'hotels'))
+
+    // 실시간 구독
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const hotelList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Hotel[]
+
+      setHotels(hotelList)
+    })
+
+    // Cleanup: 구독 해제
+    return () => unsubscribe()
+  }, [])
+
+  return (
+    <div>
+      {hotels.map(hotel => (
+        <HotelItem key={hotel.id} hotel={hotel} />
+      ))}
+    </div>
+  )
+}
+```
+
+---
+
+## Chapter 6: useCallback과 useMemo - 성능 최적화
+
+### 6.1 React의 렌더링 최적화
+
+React는 기본적으로 부모 컴포넌트가 리렌더링되면 모든 자식 컴포넌트도 리렌더링됩니다. `useCallback`과 `useMemo`는 불필요한 리렌더링을 방지합니다.
+
+### 6.2 useMemo - 값 메모이제이션
+
+**언제 사용할까?**
+- 비용이 큰 계산 결과를 캐싱
+- 참조 동일성이 중요한 객체/배열
+
+```typescript
+import { useMemo } from 'react'
+
+function ExpensiveComponent({ items }: { items: Item[] }) {
+  // ❌ 매 렌더링마다 재계산
+  const sortedItems = items.sort((a, b) => b.price - a.price)
+
+  // ✅ items가 변경될 때만 재계산
+  const sortedItems = useMemo(() => {
+    console.log('정렬 실행')
+    return items.sort((a, b) => b.price - a.price)
+  }, [items])
+
+  return <div>{sortedItems.map(item => ...)}</div>
+}
+```
+
+### 6.3 실전 예제: 필터링과 정렬
+
+```typescript
+function HotelList({ hotels }: { hotels: Hotel[] }) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'price' | 'rating'>('price')
+
+  // 필터링 + 정렬 결과를 메모이제이션
+  const filteredAndSortedHotels = useMemo(() => {
+    console.log('필터링 및 정렬 실행')
+
+    // 1. 검색어로 필터링
+    const filtered = hotels.filter(hotel =>
+      hotel.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // 2. 정렬
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'price') {
+        return a.price - b.price
+      } else {
+        return b.rating - a.rating
+      }
+    })
+
+    return sorted
+  }, [hotels, searchTerm, sortBy])
+
+  return (
+    <div>
+      <input
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        placeholder="호텔 검색..."
+      />
+      <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+        <option value="price">가격순</option>
+        <option value="rating">평점순</option>
+      </select>
+
+      {filteredAndSortedHotels.map(hotel => (
+        <HotelItem key={hotel.id} hotel={hotel} />
+      ))}
+    </div>
+  )
+}
+```
+
+### 6.4 useCallback - 함수 메모이제이션
+
+**언제 사용할까?**
+- 자식 컴포넌트에 함수를 props로 전달할 때
+- 의존성 배열에 함수가 포함된 경우
+
+```typescript
+import { useCallback } from 'react'
+
+function Parent() {
+  const [count, setCount] = useState(0)
+  const [otherState, setOtherState] = useState(0)
+
+  // ❌ 매 렌더링마다 새 함수 생성
+  const handleClick = () => {
+    setCount(count + 1)
+  }
+
+  // ✅ count가 변경될 때만 새 함수 생성
+  const handleClick = useCallback(() => {
+    setCount(prev => prev + 1)
+  }, [])
+
+  return <Child onClick={handleClick} />
+}
+
+// React.memo로 props가 변경될 때만 리렌더링
+const Child = memo(({ onClick }: { onClick: () => void }) => {
+  console.log('Child 렌더링')
+  return <button onClick={onClick}>클릭</button>
+})
+```
+
+### 6.5 실전 예제: 검색 디바운싱
+
+```typescript
+function SearchBar() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [results, setResults] = useState<Hotel[]>([])
+
+  // 검색 함수를 useCallback으로 메모이제이션
+  const performSearch = useCallback(async (keyword: string) => {
+    if (keyword.trim() === '') {
+      setResults([])
+      return
+    }
+
+    const data = await searchHotels(keyword)
+    setResults(data)
+  }, [])
+
+  // 디바운싱 적용
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      performSearch(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, performSearch])
+
+  return (
+    <div>
+      <input
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        placeholder="호텔 검색..."
+      />
+      <SearchResults results={results} />
+    </div>
+  )
+}
+```
+
+### 6.6 useCallback과 useMemo 조합
+
+```typescript
+function HotelManager() {
+  const [hotels, setHotels] = useState<Hotel[]>([])
+  const [filter, setFilter] = useState('')
+
+  // 필터링된 호텔 목록 (useMemo)
+  const filteredHotels = useMemo(() => {
+    return hotels.filter(hotel =>
+      hotel.name.toLowerCase().includes(filter.toLowerCase())
+    )
+  }, [hotels, filter])
+
+  // 호텔 추가 함수 (useCallback)
+  const addHotel = useCallback((hotel: Hotel) => {
+    setHotels(prev => [...prev, hotel])
+  }, [])
+
+  // 호텔 삭제 함수 (useCallback)
+  const deleteHotel = useCallback((hotelId: string) => {
+    setHotels(prev => prev.filter(h => h.id !== hotelId))
+  }, [])
+
+  return (
+    <div>
+      <input
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+      />
+      <HotelList
+        hotels={filteredHotels}
+        onDelete={deleteHotel}
+      />
+      <AddHotelForm onAdd={addHotel} />
+    </div>
+  )
+}
+```
+
+### 6.7 성능 측정
+
+```typescript
+function PerformanceCheck() {
+  const [count, setCount] = useState(0)
+
+  const expensiveCalculation = (num: number) => {
+    console.time('계산 시간')
+    let result = 0
+    for (let i = 0; i < 1000000000; i++) {
+      result += num
+    }
+    console.timeEnd('계산 시간')
+    return result
+  }
+
+  // useMemo 없이
+  const result1 = expensiveCalculation(count)
+
+  // useMemo 사용
+  const result2 = useMemo(() => expensiveCalculation(count), [count])
+
+  return <div>{result2}</div>
+}
+```
+
+### 6.8 주의사항
+
+```typescript
+// ❌ 과도한 최적화 - 간단한 계산에는 불필요
+const sum = useMemo(() => a + b, [a, b])
+
+// ✅ 이렇게만 해도 충분
+const sum = a + b
+
+// ❌ 모든 함수를 useCallback으로 감쌀 필요 없음
+const handleClick = useCallback(() => {
+  console.log('click')
+}, [])
+
+// ✅ 자식에게 전달하지 않는다면 불필요
+const handleClick = () => {
+  console.log('click')
+}
+```
+
+---
+
+## Chapter 7: useRef - DOM 접근과 값 보관
+
+### 7.1 useRef란?
+
+`useRef`는 두 가지 주요 용도로 사용됩니다:
+1. **DOM 요소에 직접 접근**
+2. **리렌더링되지 않는 변수 저장**
+
+**기본 문법:**
+
+```typescript
+const ref = useRef<Type>(initialValue)
+```
+
+### 7.2 DOM 요소 접근
+
+```typescript
+function InputFocus() {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFocus = () => {
+    // DOM 요소에 직접 접근
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div>
+      <input ref={inputRef} type="text" />
+      <button onClick={handleFocus}>포커스</button>
+    </div>
+  )
+}
+```
+
+### 7.3 실전 예제: 검색 입력창 자동 포커스
+
+```typescript
+function SearchBar() {
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // 컴포넌트 마운트 시 자동 포커스
+    searchInputRef.current?.focus()
+  }, [])
+
+  const handleClear = () => {
+    if (searchInputRef.current) {
+      searchInputRef.current.value = ''
+      searchInputRef.current.focus()
+    }
+  }
+
+  return (
+    <div>
+      <input
+        ref={searchInputRef}
+        type="text"
+        placeholder="호텔 검색..."
+      />
+      <button onClick={handleClear}>초기화</button>
+    </div>
+  )
+}
+```
+
+### 7.4 스크롤 위치 제어
+
+```typescript
+function ScrollToTop() {
+  const topRef = useRef<HTMLDivElement>(null)
+
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  return (
+    <div>
+      <div ref={topRef}>페이지 상단</div>
+
+      {/* 긴 콘텐츠 */}
+      <div style={{ height: '2000px' }}>...</div>
+
+      <button onClick={scrollToTop}>맨 위로</button>
+    </div>
+  )
+}
+```
+
+### 7.5 이전 값 저장
+
+```typescript
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>()
+
+  useEffect(() => {
+    ref.current = value
+  }, [value])
+
+  return ref.current
+}
+
+// 사용
+function Counter() {
+  const [count, setCount] = useState(0)
+  const prevCount = usePrevious(count)
+
+  return (
+    <div>
+      <p>현재: {count}</p>
+      <p>이전: {prevCount}</p>
+      <button onClick={() => setCount(count + 1)}>증가</button>
+    </div>
+  )
+}
+```
+
+### 7.6 타이머 ID 저장
+
+```typescript
+function Timer() {
+  const [count, setCount] = useState(0)
+  const [isRunning, setIsRunning] = useState(false)
+  const timerRef = useRef<number | null>(null)
+
+  const start = () => {
+    if (timerRef.current !== null) return
+
+    setIsRunning(true)
+    timerRef.current = window.setInterval(() => {
+      setCount(prev => prev + 1)
+    }, 1000)
+  }
+
+  const stop = () => {
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+      setIsRunning(false)
+    }
+  }
+
+  const reset = () => {
+    stop()
+    setCount(0)
+  }
+
+  // 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current)
+      }
+    }
+  }, [])
+
+  return (
+    <div>
+      <p>시간: {count}초</p>
+      <button onClick={start} disabled={isRunning}>시작</button>
+      <button onClick={stop} disabled={!isRunning}>정지</button>
+      <button onClick={reset}>리셋</button>
+    </div>
+  )
+}
+```
+
+### 7.7 useRef vs useState
+
+```typescript
+function Comparison() {
+  // useState: 값이 변경되면 리렌더링됨
+  const [stateValue, setStateValue] = useState(0)
+
+  // useRef: 값이 변경되어도 리렌더링 안 됨
+  const refValue = useRef(0)
+
+  const handleStateChange = () => {
+    setStateValue(prev => prev + 1)
+    console.log('리렌더링 발생')
+  }
+
+  const handleRefChange = () => {
+    refValue.current += 1
+    console.log('리렌더링 없음, 값:', refValue.current)
+  }
+
+  return (
+    <div>
+      <p>State: {stateValue}</p>
+      <p>Ref: {refValue.current}</p>
+      <button onClick={handleStateChange}>State 변경</button>
+      <button onClick={handleRefChange}>Ref 변경</button>
+    </div>
+  )
+}
+```
+
+### 7.8 실전 예제: 무한 스크롤
+
+```typescript
+function InfiniteScroll() {
+  const [items, setItems] = useState<number[]>([])
+  const [page, setPage] = useState(0)
+  const loaderRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Intersection Observer 설정
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // 마지막 요소가 보이면 다음 페이지 로드
+          setPage(prev => prev + 1)
+        }
+      },
+      { threshold: 1.0 }
+    )
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current)
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // 페이지가 변경되면 데이터 로드
+    const newItems = Array.from({ length: 20 }, (_, i) => page * 20 + i)
+    setItems(prev => [...prev, ...newItems])
+  }, [page])
+
+  return (
+    <div>
+      {items.map(item => (
+        <div key={item}>Item {item}</div>
+      ))}
+      <div ref={loaderRef}>로딩 중...</div>
+    </div>
+  )
+}
+```
+
+---
+
+## Chapter 8: useContext - 전역 상태 관리
+
+### 8.1 Context API란?
+
+Props Drilling 문제를 해결하기 위한 React의 내장 상태 관리 솔루션입니다.
+
+**Context 생성 3단계:**
+1. Context 생성 (`createContext`)
+2. Provider로 값 제공
+3. Consumer에서 값 사용 (`useContext`)
+
+### 8.2 기본 사용법
+
+```typescript
+import { createContext, useContext, useState } from 'react'
+
+// 1. Context 생성
+interface ThemeContextType {
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+
+// 2. Provider 컴포넌트
+function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+
+// 3. Custom Hook으로 사용 편의성 향상
+function useTheme() {
+  const context = useContext(ThemeContext)
+  if (context === undefined) {
+    throw new Error('useTheme must be used within ThemeProvider')
+  }
+  return context
+}
+
+// 4. 사용
+function App() {
+  return (
+    <ThemeProvider>
+      <Header />
+      <Main />
+    </ThemeProvider>
+  )
+}
+
+function Header() {
+  const { theme, toggleTheme } = useTheme()
+
+  return (
+    <header style={{ background: theme === 'light' ? '#fff' : '#333' }}>
+      <button onClick={toggleTheme}>
+        {theme === 'light' ? '다크모드' : '라이트모드'}
+      </button>
+    </header>
+  )
+}
+```
+
+### 8.3 실전 예제: 사용자 인증 Context
+
+**`src/contexts/UserContext.tsx`**
+
+```typescript
+import { createContext, useContext, useState, useEffect } from 'react'
+import { User } from '@models/user'
+import { auth } from '@remote/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+
+interface UserContextType {
+  user: User | null
+  setUser: (user: User | null) => void
+  loading: boolean
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined)
+
+export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName ?? '',
+          photoURL: firebaseUser.photoURL ?? '',
+        })
+      } else {
+        setUser(null)
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  return (
+    <UserContext.Provider value={{ user, setUser, loading }}>
+      {children}
+    </UserContext.Provider>
+  )
+}
+
+export function useUser() {
+  const context = useContext(UserContext)
+  if (context === undefined) {
+    throw new Error('useUser must be used within UserProvider')
+  }
+  return context
+}
+
+// 사용
+function Profile() {
+  const { user, loading } = useUser()
+
+  if (loading) return <div>로딩 중...</div>
+  if (!user) return <div>로그인이 필요합니다</div>
+
+  return <div>{user.displayName}님 환영합니다!</div>
+}
+```
+
+### 8.4 여러 Context 조합
+
+```typescript
+function App() {
+  return (
+    <ThemeProvider>
+      <UserProvider>
+        <LanguageProvider>
+          <NotificationProvider>
+            <Router />
+          </NotificationProvider>
+        </LanguageProvider>
+      </UserProvider>
+    </ThemeProvider>
+  )
+}
+
+// 또는 Provider 조합 컴포넌트
+function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <UserProvider>
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
+      </UserProvider>
+    </ThemeProvider>
+  )
+}
+
+function App() {
+  return (
+    <AppProviders>
+      <Router />
+    </AppProviders>
+  )
+}
+```
+
+### 8.5 Context 성능 최적화
+
+```typescript
+// ❌ 성능 문제: 모든 consumer가 리렌더링됨
+function BadProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState(null)
+  const [settings, setSettings] = useState({})
+
+  // 매 렌더링마다 새 객체 생성
+  return (
+    <UserContext.Provider value={{ user, setUser, settings, setSettings }}>
+      {children}
+    </UserContext.Provider>
+  )
+}
+
+// ✅ 개선: Context 분리
+const UserContext = createContext(null)
+const SettingsContext = createContext(null)
+
+function GoodProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState(null)
+  const [settings, setSettings] = useState({})
+
+  const userValue = useMemo(() => ({ user, setUser }), [user])
+  const settingsValue = useMemo(() => ({ settings, setSettings }), [settings])
+
+  return (
+    <UserContext.Provider value={userValue}>
+      <SettingsContext.Provider value={settingsValue}>
+        {children}
+      </SettingsContext.Provider>
+    </UserContext.Provider>
+  )
+}
+```
+
+### 8.6 Context vs Props vs 상태 관리 라이브러리
+
+```typescript
+// Props: 1-2단계 전달
+function Parent() {
+  const [user, setUser] = useState(null)
+  return <Child user={user} />
+}
+
+// Context: 여러 단계 전달, 중간 컴포넌트 불필요
+<UserContext.Provider value={user}>
+  <DeepChild />  {/* 중간 컴포넌트들이 user를 전달할 필요 없음 */}
+</UserContext.Provider>
+
+// Zustand/Redux: 복잡한 전역 상태
+const useStore = create((set) => ({
+  user: null,
+  setUser: (user) => set({ user }),
+}))
+```
+
 ---
 
 # Part 3: 실전 React 패턴
+
+## Chapter 9: Custom Hooks - 로직 재사용
+
+### 9.1 Custom Hook이란?
+
+Custom Hook은 상태 관리 로직을 재사용 가능한 함수로 추출하는 패턴입니다.
+
+**규칙:**
+- 이름은 `use`로 시작
+- 다른 Hook을 사용할 수 있음
+- 컴포넌트가 아니므로 JSX 반환 불가
+
+### 9.2 기본 Custom Hook 예제
+
+```typescript
+// useToggle Hook
+function useToggle(initialValue = false) {
+  const [value, setValue] = useState(initialValue)
+
+  const toggle = useCallback(() => {
+    setValue(prev => !prev)
+  }, [])
+
+  const setTrue = useCallback(() => setValue(true), [])
+  const setFalse = useCallback(() => setValue(false), [])
+
+  return { value, toggle, setTrue, setFalse }
+}
+
+// 사용
+function Modal() {
+  const { value: isOpen, toggle, setTrue, setFalse } = useToggle()
+
+  return (
+    <div>
+      <button onClick={setTrue}>열기</button>
+      {isOpen && (
+        <div>
+          <p>모달 내용</p>
+          <button onClick={setFalse}>닫기</button>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### 9.3 실전 Custom Hooks
+
+#### useDebounce
+
+```typescript
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => clearTimeout(timer)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+// 사용
+function SearchBar() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 500)
+
+  useEffect(() => {
+    if (debouncedSearch) {
+      searchAPI(debouncedSearch)
+    }
+  }, [debouncedSearch])
+
+  return (
+    <input
+      value={searchTerm}
+      onChange={e => setSearchTerm(e.target.value)}
+    />
+  )
+}
+```
+
+#### useLocalStorage
+
+```typescript
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key)
+      return item ? JSON.parse(item) : initialValue
+    } catch (error) {
+      console.error(error)
+      return initialValue
+    }
+  })
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value
+      setStoredValue(valueToStore)
+      window.localStorage.setItem(key, JSON.stringify(valueToStore))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  return [storedValue, setValue] as const
+}
+
+// 사용
+function Settings() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light')
+
+  return (
+    <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+      현재 테마: {theme}
+    </button>
+  )
+}
+```
+
+#### useIntersectionObserver
+
+```typescript
+function useIntersectionObserver(
+  ref: RefObject<Element>,
+  options?: IntersectionObserverInit
+) {
+  const [isIntersecting, setIsIntersecting] = useState(false)
+
+  useEffect(() => {
+    if (!ref.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsIntersecting(entry.isIntersecting),
+      options
+    )
+
+    observer.observe(ref.current)
+
+    return () => observer.disconnect()
+  }, [ref, options])
+
+  return isIntersecting
+}
+
+// 사용
+function LazyImage({ src }: { src: string }) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const isVisible = useIntersectionObserver(imgRef, { threshold: 0.1 })
+
+  return (
+    <img
+      ref={imgRef}
+      src={isVisible ? src : '/placeholder.jpg'}
+      alt="지연 로딩 이미지"
+    />
+  )
+}
+```
+
+---
+
+## Chapter 10: React Router - SPA 라우팅
+
+### 10.1 React Router 설정
+
+```typescript
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/hotels" element={<HotelListPage />} />
+        <Route path="/hotel/:id" element={<HotelDetailPage />} />
+        <Route path="/signin" element={<SigninPage />} />
+        <Route path="/my" element={<MyPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+```
+
+### 10.2 네비게이션
+
+```typescript
+import { Link, useNavigate } from 'react-router-dom'
+
+function Navigation() {
+  const navigate = useNavigate()
+
+  return (
+    <nav>
+      {/* Link 컴포넌트 */}
+      <Link to="/">홈</Link>
+      <Link to="/hotels">호텔 목록</Link>
+
+      {/* 프로그래밍 방식 네비게이션 */}
+      <button onClick={() => navigate('/hotels')}>호텔 보기</button>
+      <button onClick={() => navigate(-1)}>뒤로가기</button>
+    </nav>
+  )
+}
+```
+
+### 10.3 URL 파라미터와 쿼리스트링
+
+```typescript
+import { useParams, useSearchParams } from 'react-router-dom'
+
+// URL 파라미터: /hotel/:id
+function HotelDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const { data: hotel } = useHotel({ id: id! })
+
+  return <div>{hotel?.name}</div>
+}
+
+// 쿼리스트링: /hotels?filter=popular&sort=price
+function HotelListPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const filter = searchParams.get('filter') // 'popular'
+  const sort = searchParams.get('sort') // 'price'
+
+  const updateFilter = (newFilter: string) => {
+    setSearchParams({ filter: newFilter, sort: sort ?? 'price' })
+  }
+
+  return <div>...</div>
+}
+```
+
+### 10.4 Protected Route (인증 라우트)
+
+```typescript
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useUser()
+
+  if (loading) {
+    return <div>로딩 중...</div>
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" replace />
+  }
+
+  return <>{children}</>
+}
+
+// 사용
+function App() {
+  return (
+    <Routes>
+      <Route path="/signin" element={<SigninPage />} />
+      <Route
+        path="/my"
+        element={
+          <ProtectedRoute>
+            <MyPage />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
+}
+```
+
+---
 
 ## Chapter 11: 데이터 페칭과 React Query
 
